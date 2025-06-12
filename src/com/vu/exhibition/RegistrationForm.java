@@ -138,35 +138,76 @@ public class RegistrationForm extends JFrame {
         String query;
         PreparedStatement stmt;
 
-        if (input.matches("\\d+")) { // all digits = assume ID
+        if (input.matches("\\d+")) {
+            // Search by Registration ID
             query = "SELECT * FROM Participants WHERE RegistrationID = ?";
             stmt = conn.prepareStatement(query);
             stmt.setString(1, input);
         } else {
+            // Search by Student Name
             query = "SELECT * FROM Participants WHERE StudentName LIKE ?";
             stmt = conn.prepareStatement(query);
             stmt.setString(1, "%" + input + "%");
         }
 
         ResultSet rs = stmt.executeQuery();
-        if (rs.next()) {
-            regIdField.setText(rs.getString("RegistrationID"));
-            nameField.setText(rs.getString("StudentName"));
-            facultyField.setText(rs.getString("Faculty"));
-            titleField.setText(rs.getString("ProjectTitle"));
-            contactField.setText(rs.getString("ContactNumber"));
-            emailField.setText(rs.getString("EmailAddress"));
-            imagePathField.setText(rs.getString("ImagePath"));
 
-            JOptionPane.showMessageDialog(this, "Participant found and loaded.");
-        } else {
+        java.util.List<String> options = new java.util.ArrayList<>();
+        java.util.List<String[]> results = new java.util.ArrayList<>();
+
+        while (rs.next()) {
+            String id = rs.getString("RegistrationID");
+            String name = rs.getString("StudentName");
+            String title = rs.getString("ProjectTitle");
+            options.add(id + " - " + name + " (" + title + ")");
+            results.add(new String[] {
+                rs.getString("RegistrationID"),
+                rs.getString("StudentName"),
+                rs.getString("Faculty"),
+                rs.getString("ProjectTitle"),
+                rs.getString("ContactNumber"),
+                rs.getString("EmailAddress"),
+                rs.getString("ImagePath")
+            });
+        }
+
+        if (results.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No participant found.");
+        } else if (results.size() == 1) {
+            loadParticipantData(results.get(0));
+            JOptionPane.showMessageDialog(this, "Participant loaded.");
+        } else {
+            String selected = (String) JOptionPane.showInputDialog(
+                this,
+                "Multiple participants found. Select one:",
+                "Select Participant",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                options.toArray(),
+                options.get(0)
+            );
+
+            if (selected != null) {
+                int index = options.indexOf(selected);
+                loadParticipantData(results.get(index));
+                JOptionPane.showMessageDialog(this, "Participant loaded.");
+            }
         }
 
     } catch (Exception ex) {
         JOptionPane.showMessageDialog(this, "Error during search: " + ex.getMessage());
         ex.printStackTrace();
     }
+}
+
+private void loadParticipantData(String[] data) {
+    regIdField.setText(data[0]);
+    nameField.setText(data[1]);
+    facultyField.setText(data[2]);
+    titleField.setText(data[3]);
+    contactField.setText(data[4]);
+    emailField.setText(data[5]);
+    imagePathField.setText(data[6]);
 }
 
 
