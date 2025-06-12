@@ -1,4 +1,4 @@
-package com.vu.exhibition.ui;
+package com.vu.exhibition;
 
 import javax.swing.*;
 import java.awt.*;
@@ -45,7 +45,7 @@ public class RegistrationForm extends JFrame {
         JTextField imagePathField = new JTextField();
         formPanel.add(imagePathField);
 
-        // Add buttons
+        // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(new JButton("Register"));
         buttonPanel.add(new JButton("Search"));
@@ -54,7 +54,7 @@ public class RegistrationForm extends JFrame {
         buttonPanel.add(new JButton("Clear"));
         buttonPanel.add(new JButton("Exit"));
 
-        // Arrange panels in the frame
+        // Frame layout
         setLayout(new BorderLayout(10, 10));
         add(titleLabel, BorderLayout.NORTH);
         add(formPanel, BorderLayout.CENTER);
