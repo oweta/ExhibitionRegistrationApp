@@ -52,6 +52,11 @@ public class RegistrationForm extends JFrame {
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout());
 
+        JButton viewAllButton = new JButton("View All");
+        viewAllButton.addActionListener(e -> new ViewAllParticipants());
+        buttonPanel.add(viewAllButton);
+
+
         JButton registerButton = new JButton("Register");
         registerButton.addActionListener(e -> registerParticipant());
         buttonPanel.add(registerButton);
@@ -60,8 +65,13 @@ public class RegistrationForm extends JFrame {
         searchButton.addActionListener(e -> searchParticipant());
         buttonPanel.add(searchButton);
 
-        buttonPanel.add(new JButton("Update"));
-        buttonPanel.add(new JButton("Delete"));
+        JButton updateButton = new JButton("Update");
+        updateButton.addActionListener(e -> updateParticipant());
+        buttonPanel.add(updateButton);
+
+        JButton deleteButton = new JButton("Delete");
+        deleteButton.addActionListener(e -> deleteParticipant());
+        buttonPanel.add(deleteButton);
 
         JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(e -> clearForm());
@@ -87,7 +97,6 @@ public class RegistrationForm extends JFrame {
         String email = emailField.getText().trim();
         String imagePath = imagePathField.getText().trim();
 
-        // Basic validation
         if (regId.isEmpty() || name.isEmpty() || faculty.isEmpty() || title.isEmpty()
                 || contact.isEmpty() || email.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill in all required fields.", "Validation Error", JOptionPane.WARNING_MESSAGE);
@@ -125,91 +134,169 @@ public class RegistrationForm extends JFrame {
     }
 
     private void searchParticipant() {
-    String input = JOptionPane.showInputDialog(this, "Enter Registration ID or Student Name to search:");
+        String input = JOptionPane.showInputDialog(this, "Enter Registration ID or Student Name to search:");
 
-    if (input == null || input.trim().isEmpty()) {
-        JOptionPane.showMessageDialog(this, "Search cancelled or empty input.");
-        return;
-    }
-
-    input = input.trim();
-
-    try (Connection conn = DBConnector.connect()) {
-        String query;
-        PreparedStatement stmt;
-
-        if (input.matches("\\d+")) {
-            // Search by Registration ID
-            query = "SELECT * FROM Participants WHERE RegistrationID = ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, input);
-        } else {
-            // Search by Student Name
-            query = "SELECT * FROM Participants WHERE StudentName LIKE ?";
-            stmt = conn.prepareStatement(query);
-            stmt.setString(1, "%" + input + "%");
+        if (input == null || input.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Search cancelled or empty input.");
+            return;
         }
 
-        ResultSet rs = stmt.executeQuery();
+        input = input.trim();
 
-        java.util.List<String> options = new java.util.ArrayList<>();
-        java.util.List<String[]> results = new java.util.ArrayList<>();
+        try (Connection conn = DBConnector.connect()) {
+            String query;
+            PreparedStatement stmt;
 
-        while (rs.next()) {
-            String id = rs.getString("RegistrationID");
-            String name = rs.getString("StudentName");
-            String title = rs.getString("ProjectTitle");
-            options.add(id + " - " + name + " (" + title + ")");
-            results.add(new String[] {
-                rs.getString("RegistrationID"),
-                rs.getString("StudentName"),
-                rs.getString("Faculty"),
-                rs.getString("ProjectTitle"),
-                rs.getString("ContactNumber"),
-                rs.getString("EmailAddress"),
-                rs.getString("ImagePath")
-            });
-        }
-
-        if (results.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No participant found.");
-        } else if (results.size() == 1) {
-            loadParticipantData(results.get(0));
-            JOptionPane.showMessageDialog(this, "Participant loaded.");
-        } else {
-            String selected = (String) JOptionPane.showInputDialog(
-                this,
-                "Multiple participants found. Select one:",
-                "Select Participant",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                options.toArray(),
-                options.get(0)
-            );
-
-            if (selected != null) {
-                int index = options.indexOf(selected);
-                loadParticipantData(results.get(index));
-                JOptionPane.showMessageDialog(this, "Participant loaded.");
+            if (input.matches("\\d+")) {
+                query = "SELECT * FROM Participants WHERE RegistrationID = ?";
+                stmt = conn.prepareStatement(query);
+                stmt.setString(1, input);
+            } else {
+                query = "SELECT * FROM Participants WHERE StudentName LIKE ?";
+                stmt = conn.prepareStatement(query);
+                stmt.setString(1, "%" + input + "%");
             }
+
+            ResultSet rs = stmt.executeQuery();
+
+            java.util.List<String> options = new java.util.ArrayList<>();
+            java.util.List<String[]> results = new java.util.ArrayList<>();
+
+            while (rs.next()) {
+                String id = rs.getString("RegistrationID");
+                String name = rs.getString("StudentName");
+                String title = rs.getString("ProjectTitle");
+                options.add(id + " - " + name + " (" + title + ")");
+                results.add(new String[]{
+                        rs.getString("RegistrationID"),
+                        rs.getString("StudentName"),
+                        rs.getString("Faculty"),
+                        rs.getString("ProjectTitle"),
+                        rs.getString("ContactNumber"),
+                        rs.getString("EmailAddress"),
+                        rs.getString("ImagePath")
+                });
+            }
+
+            if (results.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No participant found.");
+            } else if (results.size() == 1) {
+                loadParticipantData(results.get(0));
+                JOptionPane.showMessageDialog(this, "Participant loaded.");
+            } else {
+                String selected = (String) JOptionPane.showInputDialog(
+                        this,
+                        "Multiple participants found. Select one:",
+                        "Select Participant",
+                        JOptionPane.PLAIN_MESSAGE,
+                        null,
+                        options.toArray(),
+                        options.get(0)
+                );
+
+                if (selected != null) {
+                    int index = options.indexOf(selected);
+                    loadParticipantData(results.get(index));
+                    JOptionPane.showMessageDialog(this, "Participant loaded.");
+                }
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error during search: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private void updateParticipant() {
+        String regId = regIdField.getText().trim();
+
+        if (regId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter Registration ID to update.");
+            return;
         }
 
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this, "Error during search: " + ex.getMessage());
-        ex.printStackTrace();
+        String name = nameField.getText().trim();
+        String faculty = facultyField.getText().trim();
+        String title = titleField.getText().trim();
+        String contact = contactField.getText().trim();
+        String email = emailField.getText().trim();
+        String imagePath = imagePathField.getText().trim();
+
+        if (!email.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$")) {
+            JOptionPane.showMessageDialog(this, "Invalid email format.");
+            return;
+        }
+
+        String sql = "UPDATE Participants SET StudentName=?, Faculty=?, ProjectTitle=?, ContactNumber=?, EmailAddress=?, ImagePath=? WHERE RegistrationID=?";
+
+        try (Connection conn = DBConnector.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, name);
+            stmt.setString(2, faculty);
+            stmt.setString(3, title);
+            stmt.setString(4, contact);
+            stmt.setString(5, email);
+            stmt.setString(6, imagePath);
+            stmt.setString(7, regId);
+
+            int rows = stmt.executeUpdate();
+            if (rows > 0) {
+                JOptionPane.showMessageDialog(this, "Participant updated successfully!");
+            } else {
+                JOptionPane.showMessageDialog(this, "Participant not found.");
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Update failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
-}
 
-private void loadParticipantData(String[] data) {
-    regIdField.setText(data[0]);
-    nameField.setText(data[1]);
-    facultyField.setText(data[2]);
-    titleField.setText(data[3]);
-    contactField.setText(data[4]);
-    emailField.setText(data[5]);
-    imagePathField.setText(data[6]);
-}
+    private void deleteParticipant() {
+        String regId = regIdField.getText().trim();
 
+        if (regId.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter Registration ID to delete.");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this participant?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        String sql = "DELETE FROM Participants WHERE RegistrationID = ?";
+
+        try (Connection conn = DBConnector.connect();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, regId);
+            int rows = stmt.executeUpdate();
+
+            if (rows > 0) {
+                JOptionPane.showMessageDialog(this, "Participant deleted successfully!");
+                clearForm();
+            } else {
+                JOptionPane.showMessageDialog(this, "Participant not found.");
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Delete failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    private void loadParticipantData(String[] data) {
+        regIdField.setText(data[0]);
+        nameField.setText(data[1]);
+        facultyField.setText(data[2]);
+        titleField.setText(data[3]);
+        contactField.setText(data[4]);
+        emailField.setText(data[5]);
+        imagePathField.setText(data[6]);
+    }
 
     private void clearForm() {
         regIdField.setText("");
