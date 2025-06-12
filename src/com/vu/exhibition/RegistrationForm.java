@@ -2,10 +2,7 @@ package com.vu.exhibition;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.*;
 import com.vu.exhibition.DBConnector;
 
 public class RegistrationForm extends JFrame {
@@ -59,7 +56,10 @@ public class RegistrationForm extends JFrame {
         registerButton.addActionListener(e -> registerParticipant());
         buttonPanel.add(registerButton);
 
-        buttonPanel.add(new JButton("Search"));
+        JButton searchButton = new JButton("Search");
+        searchButton.addActionListener(e -> searchParticipant());
+        buttonPanel.add(searchButton);
+
         buttonPanel.add(new JButton("Update"));
         buttonPanel.add(new JButton("Delete"));
 
@@ -123,6 +123,52 @@ public class RegistrationForm extends JFrame {
             ex.printStackTrace();
         }
     }
+
+    private void searchParticipant() {
+    String input = JOptionPane.showInputDialog(this, "Enter Registration ID or Student Name to search:");
+
+    if (input == null || input.trim().isEmpty()) {
+        JOptionPane.showMessageDialog(this, "Search cancelled or empty input.");
+        return;
+    }
+
+    input = input.trim();
+
+    try (Connection conn = DBConnector.connect()) {
+        String query;
+        PreparedStatement stmt;
+
+        if (input.matches("\\d+")) { // all digits = assume ID
+            query = "SELECT * FROM Participants WHERE RegistrationID = ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, input);
+        } else {
+            query = "SELECT * FROM Participants WHERE StudentName LIKE ?";
+            stmt = conn.prepareStatement(query);
+            stmt.setString(1, "%" + input + "%");
+        }
+
+        ResultSet rs = stmt.executeQuery();
+        if (rs.next()) {
+            regIdField.setText(rs.getString("RegistrationID"));
+            nameField.setText(rs.getString("StudentName"));
+            facultyField.setText(rs.getString("Faculty"));
+            titleField.setText(rs.getString("ProjectTitle"));
+            contactField.setText(rs.getString("ContactNumber"));
+            emailField.setText(rs.getString("EmailAddress"));
+            imagePathField.setText(rs.getString("ImagePath"));
+
+            JOptionPane.showMessageDialog(this, "Participant found and loaded.");
+        } else {
+            JOptionPane.showMessageDialog(this, "No participant found.");
+        }
+
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this, "Error during search: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
+
 
     private void clearForm() {
         regIdField.setText("");
