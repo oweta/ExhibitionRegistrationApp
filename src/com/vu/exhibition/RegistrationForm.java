@@ -3,6 +3,7 @@ package com.vu.exhibition;
 import javax.swing.*;
 import java.awt.*;
 
+private JTextField regIdField, nameField, facultyField, titleField, contactField, emailField, imagePathField;
 public class RegistrationForm extends JFrame {
 
     public RegistrationForm() {
