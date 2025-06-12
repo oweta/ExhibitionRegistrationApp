@@ -2,9 +2,14 @@ package com.vu.exhibition;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
-private JTextField regIdField, nameField, facultyField, titleField, contactField, emailField, imagePathField;
 public class RegistrationForm extends JFrame {
+
+    private JTextField regIdField, nameField, facultyField, titleField, contactField, emailField, imagePathField;
 
     public RegistrationForm() {
         setTitle("Exhibition Registration");
@@ -19,47 +24,113 @@ public class RegistrationForm extends JFrame {
         JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
 
         formPanel.add(new JLabel("Registration ID:"));
-        JTextField regIdField = new JTextField();
+        regIdField = new JTextField();
         formPanel.add(regIdField);
 
         formPanel.add(new JLabel("Student Name:"));
-        JTextField nameField = new JTextField();
+        nameField = new JTextField();
         formPanel.add(nameField);
 
         formPanel.add(new JLabel("Faculty:"));
-        JTextField facultyField = new JTextField();
+        facultyField = new JTextField();
         formPanel.add(facultyField);
 
         formPanel.add(new JLabel("Project Title:"));
-        JTextField titleField = new JTextField();
+        titleField = new JTextField();
         formPanel.add(titleField);
 
         formPanel.add(new JLabel("Contact Number:"));
-        JTextField contactField = new JTextField();
+        contactField = new JTextField();
         formPanel.add(contactField);
 
         formPanel.add(new JLabel("Email Address:"));
-        JTextField emailField = new JTextField();
+        emailField = new JTextField();
         formPanel.add(emailField);
 
         formPanel.add(new JLabel("Image Path:"));
-        JTextField imagePathField = new JTextField();
+        imagePathField = new JTextField();
         formPanel.add(imagePathField);
 
         // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        buttonPanel.add(new JButton("Register"));
+
+        JButton registerButton = new JButton("Register");
+        registerButton.addActionListener(e -> registerParticipant());
+        buttonPanel.add(registerButton);
+
         buttonPanel.add(new JButton("Search"));
         buttonPanel.add(new JButton("Update"));
         buttonPanel.add(new JButton("Delete"));
-        buttonPanel.add(new JButton("Clear"));
-        buttonPanel.add(new JButton("Exit"));
+
+        JButton clearButton = new JButton("Clear");
+        clearButton.addActionListener(e -> clearForm());
+        buttonPanel.add(clearButton);
+
+        JButton exitButton = new JButton("Exit");
+        exitButton.addActionListener(e -> System.exit(0));
+        buttonPanel.add(exitButton);
 
         // Frame layout
         setLayout(new BorderLayout(10, 10));
         add(titleLabel, BorderLayout.NORTH);
         add(formPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void registerParticipant() {
+        String regId = regIdField.getText().trim();
+        String name = nameField.getText().trim();
+        String faculty = facultyField.getText().trim();
+        String title = titleField.getText().trim();
+        String contact = contactField.getText().trim();
+        String email = emailField.getText().trim();
+        String imagePath = imagePathField.getText().trim();
+
+        // Basic validation
+        if (regId.isEmpty() || name.isEmpty() || faculty.isEmpty() || title.isEmpty()
+                || contact.isEmpty() || email.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill in all required fields.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        if (!email.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$")) {
+            JOptionPane.showMessageDialog(this, "Invalid email format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String sql = "INSERT INTO Participants (RegistrationID, StudentName, Faculty, ProjectTitle, ContactNumber, EmailAddress, ImagePath) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBConnector.connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, regId);
+            pstmt.setString(2, name);
+            pstmt.setString(3, faculty);
+            pstmt.setString(4, title);
+            pstmt.setString(5, contact);
+            pstmt.setString(6, email);
+            pstmt.setString(7, imagePath);
+
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                JOptionPane.showMessageDialog(this, "Participant registered successfully!");
+                clearForm();
+            }
+
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error registering participant: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
+    }
+
+    private void clearForm() {
+        regIdField.setText("");
+        nameField.setText("");
+        facultyField.setText("");
+        titleField.setText("");
+        contactField.setText("");
+        emailField.setText("");
+        imagePathField.setText("");
     }
 
     public static void main(String[] args) {
