@@ -86,104 +86,148 @@ public class RegistrationForm extends JFrame {
         return btn;
     }
 
-    // DATABASE CONNECTION
     private Connection connect() throws SQLException {
-        String dbURL = "jdbc:ucanaccess://VUE_Exhibition.accdb";
-        return DriverManager.getConnection(dbURL);
+        return DBConnector.connect();
     }
 
     private void registerParticipant() {
-        String sql = "INSERT INTO Participants (RegID, Name, Faculty, Title, Contact, Email, ImagePath) VALUES (?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, regIdField.getText());
-            pst.setString(2, nameField.getText());
-            pst.setString(3, facultyField.getText());
-            pst.setString(4, titleField.getText());
-            pst.setString(5, contactField.getText());
-            pst.setString(6, emailField.getText());
-            pst.setString(7, imagePathField.getText());
-
-            int inserted = pst.executeUpdate();
-            if (inserted > 0) {
-                JOptionPane.showMessageDialog(this, "Participant Registered!");
-                clearForm();
-            }
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Registration Failed: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+    if (regIdField.getText().isBlank() || nameField.getText().isBlank()) {
+        JOptionPane.showMessageDialog(this, "Please fill in at least Registration ID and Name.");
+        return;
     }
 
-    private void searchParticipant() {
-        String sql = "SELECT * FROM Participants WHERE RegID = ?";
+    String sql = "INSERT INTO Participants (RegistrationID, StudentName, Faculty, ProjectTitle, ContactNumber, EmailAddress, ImagePath) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, regIdField.getText());
-            ResultSet rs = pst.executeQuery();
+    try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+        pst.setString(1, regIdField.getText());
+        pst.setString(2, nameField.getText());
+        pst.setString(3, facultyField.getText());
+        pst.setString(4, titleField.getText());
+        pst.setString(5, contactField.getText());
+        pst.setString(6, emailField.getText());
+        pst.setString(7, imagePathField.getText());
 
-            if (rs.next()) {
-                nameField.setText(rs.getString("Name"));
-                facultyField.setText(rs.getString("Faculty"));
-                titleField.setText(rs.getString("Title"));
-                contactField.setText(rs.getString("Contact"));
-                emailField.setText(rs.getString("Email"));
-                imagePathField.setText(rs.getString("ImagePath"));
-            } else {
-                JOptionPane.showMessageDialog(this, "Participant not found.");
-            }
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Search Failed: " + ex.getMessage());
-            ex.printStackTrace();
+        int inserted = pst.executeUpdate();
+        if (inserted > 0) {
+            JOptionPane.showMessageDialog(this, "Participant Registered!");
+            clearForm();
         }
+
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Registration Failed: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
+
+private void searchParticipant() {
+    String[] options = {"Registration ID", "Student Name", "Faculty"};
+    String choice = (String) JOptionPane.showInputDialog(
+            this,
+            "Search by:",
+            "Search Option",
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0]);
+
+    if (choice == null) return; // user cancelled
+
+    String value = JOptionPane.showInputDialog(this, "Enter " + choice + ":");
+    if (value == null || value.isBlank()) {
+        JOptionPane.showMessageDialog(this, "Search value cannot be empty.");
+        return;
     }
 
+    String sql = null;
+    switch (choice) {
+        case "Registration ID":
+            sql = "SELECT * FROM Participants WHERE RegistrationID = ?";
+            break;
+        case "Student Name":
+            sql = "SELECT * FROM Participants WHERE StudentName LIKE ?";
+            value = "%" + value + "%";
+            break;
+        case "Faculty":
+            sql = "SELECT * FROM Participants WHERE Faculty LIKE ?";
+            value = "%" + value + "%";
+            break;
+    }
+
+    try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+        pst.setString(1, value);
+        ResultSet rs = pst.executeQuery();
+
+        if (rs.next()) {
+            regIdField.setText(rs.getString("RegistrationID"));
+            nameField.setText(rs.getString("StudentName"));
+            facultyField.setText(rs.getString("Faculty"));
+            titleField.setText(rs.getString("ProjectTitle"));
+            contactField.setText(rs.getString("ContactNumber"));
+            emailField.setText(rs.getString("EmailAddress"));
+            imagePathField.setText(rs.getString("ImagePath"));
+        } else {
+            JOptionPane.showMessageDialog(this, "Participant not found.");
+        }
+
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Search Failed: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
     private void updateParticipant() {
-        String sql = "UPDATE Participants SET Name=?, Faculty=?, Title=?, Contact=?, Email=?, ImagePath=? WHERE RegID=?";
-
-        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, nameField.getText());
-            pst.setString(2, facultyField.getText());
-            pst.setString(3, titleField.getText());
-            pst.setString(4, contactField.getText());
-            pst.setString(5, emailField.getText());
-            pst.setString(6, imagePathField.getText());
-            pst.setString(7, regIdField.getText());
-
-            int updated = pst.executeUpdate();
-            if (updated > 0) {
-                JOptionPane.showMessageDialog(this, "Participant Updated!");
-            } else {
-                JOptionPane.showMessageDialog(this, "Update Failed: ID not found.");
-            }
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Update Failed: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+    if (regIdField.getText().isBlank()) {
+        JOptionPane.showMessageDialog(this, "Please enter Registration ID to update.");
+        return;
     }
+
+    String sql = "UPDATE Participants SET StudentName=?, Faculty=?, ProjectTitle=?, ContactNumber=?, EmailAddress=?, ImagePath=? WHERE RegistrationID=?";
+
+    try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+        pst.setString(1, nameField.getText());
+        pst.setString(2, facultyField.getText());
+        pst.setString(3, titleField.getText());
+        pst.setString(4, contactField.getText());
+        pst.setString(5, emailField.getText());
+        pst.setString(6, imagePathField.getText());
+        pst.setString(7, regIdField.getText());
+
+        int updated = pst.executeUpdate();
+        if (updated > 0) {
+            JOptionPane.showMessageDialog(this, "Participant Updated!");
+        } else {
+            JOptionPane.showMessageDialog(this, "Update Failed: ID not found.");
+        }
+
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Update Failed: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
 
     private void deleteParticipant() {
-        String sql = "DELETE FROM Participants WHERE RegID = ?";
-
-        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
-            pst.setString(1, regIdField.getText());
-
-            int deleted = pst.executeUpdate();
-            if (deleted > 0) {
-                JOptionPane.showMessageDialog(this, "Participant Deleted!");
-                clearForm();
-            } else {
-                JOptionPane.showMessageDialog(this, "Delete Failed: ID not found.");
-            }
-
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Delete Failed: " + ex.getMessage());
-            ex.printStackTrace();
-        }
+    if (regIdField.getText().isBlank()) {
+        JOptionPane.showMessageDialog(this, "Please enter Registration ID to delete.");
+        return;
     }
+
+    String sql = "DELETE FROM Participants WHERE RegistrationID = ?";
+
+    try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+        pst.setString(1, regIdField.getText());
+
+        int deleted = pst.executeUpdate();
+        if (deleted > 0) {
+            JOptionPane.showMessageDialog(this, "Participant Deleted!");
+            clearForm();
+        } else {
+            JOptionPane.showMessageDialog(this, "Delete Failed: ID not found.");
+        }
+
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Delete Failed: " + ex.getMessage());
+        ex.printStackTrace();
+    }
+}
 
     private void clearForm() {
         regIdField.setText("");
