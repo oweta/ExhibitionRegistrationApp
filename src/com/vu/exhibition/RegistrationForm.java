@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.sql.*;
 
 public class RegistrationForm extends JFrame {
@@ -11,7 +12,6 @@ public class RegistrationForm extends JFrame {
     private JTextField regIdField, nameField, facultyField, titleField, contactField, emailField, imagePathField;
 
     public RegistrationForm() {
-        // Apply FlatLaf Look & Feel
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (Exception ex) {
@@ -21,15 +21,13 @@ public class RegistrationForm extends JFrame {
         setTitle("Exhibition Registration");
         setSize(650, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the window
+        setLocationRelativeTo(null);
 
-        // Title label
         JLabel titleLabel = new JLabel("Innovation Exhibition Registration", JLabel.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLabel.setForeground(new Color(33, 150, 243));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 10, 0));
 
-        // Form panel
         JPanel formPanel = new JPanel(new GridLayout(8, 2, 12, 12));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
         formPanel.setBackground(Color.WHITE);
@@ -50,9 +48,7 @@ public class RegistrationForm extends JFrame {
         addFormRow(formPanel, "Email Address:", emailField);
         addFormRow(formPanel, "Image Path:", imagePathField);
 
-        // Buttons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
-
         buttonPanel.add(styledButton("View All", e -> new ViewAllParticipants()));
         buttonPanel.add(styledButton("Register", e -> registerParticipant()));
         buttonPanel.add(styledButton("Search", e -> searchParticipant()));
@@ -61,7 +57,6 @@ public class RegistrationForm extends JFrame {
         buttonPanel.add(styledButton("Clear", e -> clearForm()));
         buttonPanel.add(styledButton("Exit", e -> System.exit(0)));
 
-        // Layout
         setLayout(new BorderLayout(10, 10));
         add(titleLabel, BorderLayout.NORTH);
         add(formPanel, BorderLayout.CENTER);
@@ -91,28 +86,103 @@ public class RegistrationForm extends JFrame {
         return btn;
     }
 
-    // Keep all logic methods (register, update, search, delete, clear)
-    // These are unchanged from your current code
-    // You can copy the registerParticipant(), searchParticipant(), etc. methods as-is here
+    // DATABASE CONNECTION
+    private Connection connect() throws SQLException {
+        String dbURL = "jdbc:ucanaccess://VUE_Exhibition.accdb";
+        return DriverManager.getConnection(dbURL);
+    }
 
     private void registerParticipant() {
-        // Your existing code remains unchanged
-        // ...
+        String sql = "INSERT INTO Participants (RegID, Name, Faculty, Title, Contact, Email, ImagePath) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, regIdField.getText());
+            pst.setString(2, nameField.getText());
+            pst.setString(3, facultyField.getText());
+            pst.setString(4, titleField.getText());
+            pst.setString(5, contactField.getText());
+            pst.setString(6, emailField.getText());
+            pst.setString(7, imagePathField.getText());
+
+            int inserted = pst.executeUpdate();
+            if (inserted > 0) {
+                JOptionPane.showMessageDialog(this, "Participant Registered!");
+                clearForm();
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Registration Failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     private void searchParticipant() {
-        // Your existing code remains unchanged
-        // ...
+        String sql = "SELECT * FROM Participants WHERE RegID = ?";
+
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, regIdField.getText());
+            ResultSet rs = pst.executeQuery();
+
+            if (rs.next()) {
+                nameField.setText(rs.getString("Name"));
+                facultyField.setText(rs.getString("Faculty"));
+                titleField.setText(rs.getString("Title"));
+                contactField.setText(rs.getString("Contact"));
+                emailField.setText(rs.getString("Email"));
+                imagePathField.setText(rs.getString("ImagePath"));
+            } else {
+                JOptionPane.showMessageDialog(this, "Participant not found.");
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Search Failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     private void updateParticipant() {
-        // Your existing code remains unchanged
-        // ...
+        String sql = "UPDATE Participants SET Name=?, Faculty=?, Title=?, Contact=?, Email=?, ImagePath=? WHERE RegID=?";
+
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, nameField.getText());
+            pst.setString(2, facultyField.getText());
+            pst.setString(3, titleField.getText());
+            pst.setString(4, contactField.getText());
+            pst.setString(5, emailField.getText());
+            pst.setString(6, imagePathField.getText());
+            pst.setString(7, regIdField.getText());
+
+            int updated = pst.executeUpdate();
+            if (updated > 0) {
+                JOptionPane.showMessageDialog(this, "Participant Updated!");
+            } else {
+                JOptionPane.showMessageDialog(this, "Update Failed: ID not found.");
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Update Failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     private void deleteParticipant() {
-        // Your existing code remains unchanged
-        // ...
+        String sql = "DELETE FROM Participants WHERE RegID = ?";
+
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, regIdField.getText());
+
+            int deleted = pst.executeUpdate();
+            if (deleted > 0) {
+                JOptionPane.showMessageDialog(this, "Participant Deleted!");
+                clearForm();
+            } else {
+                JOptionPane.showMessageDialog(this, "Delete Failed: ID not found.");
+            }
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Delete Failed: " + ex.getMessage());
+            ex.printStackTrace();
+        }
     }
 
     private void clearForm() {
