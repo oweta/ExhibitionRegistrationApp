@@ -7,7 +7,7 @@ import java.io.File;
 
 public class DBConnector {
 
-    // Change this to your actual full path to the .accdb file:
+    // Path for database location
     private static final String DB_PATH = "C:/xampp/htdocs/ExhibitionRegistrationApp/database/VUE_Exhibition.accdb";
 
     public static Connection connect() {
