@@ -1,40 +1,49 @@
+// Package declaration for the app's structure
 package com.vu.exhibition;
 
+// Import FlatLaf for modern look and feel, Swing UI components, AWT event handling, file access, and JDBC
 import com.formdev.flatlaf.FlatLightLaf;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.sql.*;
 
+// Main class that extends JFrame (a window in Java Swing)
 public class RegistrationForm extends JFrame {
 
+    // UI components declared at class level so they can be accessed by multiple methods
     private JTextField regIdField, nameField, facultyField, titleField, contactField, emailField, imagePathField;
     private JLabel imagePreview;
     private JPanel formPanel;
 
+    // Constructor: runs when a new RegistrationForm window is created
     public RegistrationForm() {
+        // Set the application's modern look and feel using FlatLaf
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
         } catch (Exception ex) {
             System.err.println("Failed to initialize FlatLaf");
         }
 
+        // Set window title, size, close behavior, and center it on screen
         setTitle("Exhibition Registration");
         setSize(700, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
+        // Create and style the title label
         JLabel titleLabel = new JLabel("Innovation Exhibition Registration", JLabel.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLabel.setForeground(new Color(33, 150, 243));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 10, 0));
 
+        // Create and style the main form panel with a grid layout
         formPanel = new JPanel(new GridLayout(9, 2, 12, 12));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
         formPanel.setBackground(Color.WHITE);
 
+        // Initialize all text fields for form input
         regIdField = new JTextField();
         nameField = new JTextField();
         facultyField = new JTextField();
@@ -42,36 +51,35 @@ public class RegistrationForm extends JFrame {
         contactField = new JTextField();
         emailField = new JTextField();
         imagePathField = new JTextField();
-        imagePathField.setEditable(false);
+        imagePathField.setEditable(false); // prevent users from typing the path manually
 
+        // Add form rows (label + input field) for participant details
         addFormRow(formPanel, "Registration ID:", regIdField);
         addFormRow(formPanel, "Student Name:", nameField);
         addFormRow(formPanel, "Faculty:", facultyField);
         addFormRow(formPanel, "Project Title:", titleField);
         addFormRow(formPanel, "Contact Number:", contactField);
         addFormRow(formPanel, "Email Address:", emailField);
-
-        // Image path field
         addFormRow(formPanel, "Image Path:", imagePathField);
 
-        // Browse button (placed below the image path field)
+        // Browse button to select an image file
         JButton browseButton = new JButton("Browse");
         browseButton.addActionListener(e -> chooseImage());
         JPanel browsePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         browsePanel.add(browseButton);
-        formPanel.add(new JLabel(""));
+        formPanel.add(new JLabel("")); // filler for grid alignment
         formPanel.add(browsePanel);
 
-        // Image Preview on the right of the form
+        // Image preview label to show selected image
         imagePreview = new JLabel();
         imagePreview.setPreferredSize(new Dimension(150, 150));
         imagePreview.setBorder(BorderFactory.createLineBorder(Color.GRAY));
         imagePreview.setHorizontalAlignment(JLabel.CENTER);
         imagePreview.setVerticalAlignment(JLabel.CENTER);
-
         formPanel.add(new JLabel("Image Preview:"));
         formPanel.add(imagePreview);
 
+        // Create and add buttons for all participant actions
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
         buttonPanel.add(styledButton("View All", e -> new ViewAllParticipants()));
         buttonPanel.add(styledButton("Register", e -> registerParticipant()));
@@ -81,12 +89,14 @@ public class RegistrationForm extends JFrame {
         buttonPanel.add(styledButton("Clear", e -> clearForm()));
         buttonPanel.add(styledButton("Exit", e -> System.exit(0)));
 
+        // Add all components to the main window using BorderLayout
         setLayout(new BorderLayout(10, 10));
         add(titleLabel, BorderLayout.NORTH);
         add(formPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
+    // Opens file chooser dialog and sets the selected image
     private void chooseImage() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Select Participant Image");
@@ -95,21 +105,20 @@ public class RegistrationForm extends JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             String selectedPath = selectedFile.getAbsolutePath();
-            imagePathField.setText(selectedPath);
+            imagePathField.setText(selectedPath); // set path to field
+
+            // Display scaled image preview
             ImageIcon icon = new ImageIcon(new ImageIcon(selectedPath).getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH));
             imagePreview.setIcon(icon);
-
-            // Optional: You could add cropping logic here later
-            // cropAndDisplayImage(selectedPath);
         }
     }
 
-    // Optional future feature
+    // Placeholder for future feature: custom cropping of images before display
     private void cropAndDisplayImage(String path) {
-        // Placeholder: implement custom cropping logic here if needed
-        // e.g., open cropping dialog, then scale and display
+        // Future logic goes here
     }
 
+    // Utility method to add a row to the form (label + input field)
     private void addFormRow(JPanel panel, String labelText, JTextField field) {
         JLabel label = new JLabel(labelText);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
@@ -122,6 +131,7 @@ public class RegistrationForm extends JFrame {
         panel.add(field);
     }
 
+    // Utility method to create and return a styled JButton with a click listener
     private JButton styledButton(String text, java.awt.event.ActionListener action) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -133,10 +143,12 @@ public class RegistrationForm extends JFrame {
         return btn;
     }
 
+    // Establishes and returns a connection to the database
     private Connection connect() throws SQLException {
         return DBConnector.connect();
     }
 
+    // Saves participant data into the database
     private void registerParticipant() {
         if (regIdField.getText().isBlank() || nameField.getText().isBlank()) {
             JOptionPane.showMessageDialog(this, "Please fill in at least Registration ID and Name.");
@@ -166,16 +178,13 @@ public class RegistrationForm extends JFrame {
         }
     }
 
+    // Searches for participant using selected field (ID, Name, or Faculty)
     private void searchParticipant() {
         String[] options = {"Registration ID", "Student Name", "Faculty"};
         String choice = (String) JOptionPane.showInputDialog(
-                this,
-                "Search by:",
-                "Search Option",
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]);
+                this, "Search by:", "Search Option",
+                JOptionPane.QUESTION_MESSAGE, null,
+                options, options[0]);
 
         if (choice == null) return;
 
@@ -205,6 +214,7 @@ public class RegistrationForm extends JFrame {
             ResultSet rs = pst.executeQuery();
 
             if (rs.next()) {
+                // Populate fields with found data
                 regIdField.setText(rs.getString("RegistrationID"));
                 nameField.setText(rs.getString("StudentName"));
                 facultyField.setText(rs.getString("Faculty"));
@@ -213,6 +223,7 @@ public class RegistrationForm extends JFrame {
                 emailField.setText(rs.getString("EmailAddress"));
                 imagePathField.setText(rs.getString("ImagePath"));
 
+                // Load and show image preview if path exists
                 String imgPath = rs.getString("ImagePath");
                 if (imgPath != null && !imgPath.isBlank()) {
                     ImageIcon icon = new ImageIcon(new ImageIcon(imgPath).getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH));
@@ -228,6 +239,7 @@ public class RegistrationForm extends JFrame {
         }
     }
 
+    // Updates an existing participant's data based on Registration ID
     private void updateParticipant() {
         if (regIdField.getText().isBlank()) {
             JOptionPane.showMessageDialog(this, "Please enter Registration ID to update.");
@@ -258,6 +270,7 @@ public class RegistrationForm extends JFrame {
         }
     }
 
+    // Deletes a participant based on Registration ID
     private void deleteParticipant() {
         if (regIdField.getText().isBlank()) {
             JOptionPane.showMessageDialog(this, "Please enter Registration ID to delete.");
@@ -283,6 +296,7 @@ public class RegistrationForm extends JFrame {
         }
     }
 
+    // Clears all input fields and image preview
     private void clearForm() {
         regIdField.setText("");
         nameField.setText("");
@@ -294,6 +308,7 @@ public class RegistrationForm extends JFrame {
         imagePreview.setIcon(null);
     }
 
+    // Main method to launch the application
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new RegistrationForm().setVisible(true));
     }
