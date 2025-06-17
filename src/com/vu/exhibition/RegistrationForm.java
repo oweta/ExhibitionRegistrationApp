@@ -22,7 +22,7 @@ public class RegistrationForm extends JFrame {
         }
 
         setTitle("Exhibition Registration");
-        setSize(650, 600);
+        setSize(700, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -31,7 +31,7 @@ public class RegistrationForm extends JFrame {
         titleLabel.setForeground(new Color(33, 150, 243));
         titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 10, 0));
 
-        formPanel = new JPanel(new GridLayout(8, 2, 12, 12));
+        formPanel = new JPanel(new GridLayout(9, 2, 12, 12));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
         formPanel.setBackground(Color.WHITE);
 
@@ -51,23 +51,26 @@ public class RegistrationForm extends JFrame {
         addFormRow(formPanel, "Contact Number:", contactField);
         addFormRow(formPanel, "Email Address:", emailField);
 
+        // Image path field
+        addFormRow(formPanel, "Image Path:", imagePathField);
+
+        // Browse button (placed below the image path field)
         JButton browseButton = new JButton("Browse");
         browseButton.addActionListener(e -> chooseImage());
+        JPanel browsePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        browsePanel.add(browseButton);
+        formPanel.add(new JLabel(""));
+        formPanel.add(browsePanel);
 
-        JPanel imagePathPanel = new JPanel(new BorderLayout(5, 0));
-        imagePathPanel.add(imagePathField, BorderLayout.CENTER);
-        imagePathPanel.add(browseButton, BorderLayout.EAST);
-
+        // Image Preview on the right of the form
         imagePreview = new JLabel();
-        imagePreview.setPreferredSize(new Dimension(100, 100));
+        imagePreview.setPreferredSize(new Dimension(150, 150));
         imagePreview.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        imagePreview.setHorizontalAlignment(JLabel.CENTER);
+        imagePreview.setVerticalAlignment(JLabel.CENTER);
 
-        JPanel combinedPanel = new JPanel(new BorderLayout());
-        combinedPanel.add(imagePathPanel, BorderLayout.CENTER);
-        combinedPanel.add(imagePreview, BorderLayout.EAST);
-
-        formPanel.add(new JLabel("Image Path:"));
-        formPanel.add(combinedPanel);
+        formPanel.add(new JLabel("Image Preview:"));
+        formPanel.add(imagePreview);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
         buttonPanel.add(styledButton("View All", e -> new ViewAllParticipants()));
@@ -93,9 +96,18 @@ public class RegistrationForm extends JFrame {
             File selectedFile = fileChooser.getSelectedFile();
             String selectedPath = selectedFile.getAbsolutePath();
             imagePathField.setText(selectedPath);
-            ImageIcon icon = new ImageIcon(new ImageIcon(selectedPath).getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH));
+            ImageIcon icon = new ImageIcon(new ImageIcon(selectedPath).getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH));
             imagePreview.setIcon(icon);
+
+            // Optional: You could add cropping logic here later
+            // cropAndDisplayImage(selectedPath);
         }
+    }
+
+    // Optional future feature
+    private void cropAndDisplayImage(String path) {
+        // Placeholder: implement custom cropping logic here if needed
+        // e.g., open cropping dialog, then scale and display
     }
 
     private void addFormRow(JPanel panel, String labelText, JTextField field) {
@@ -165,7 +177,7 @@ public class RegistrationForm extends JFrame {
                 options,
                 options[0]);
 
-        if (choice == null) return; // user cancelled
+        if (choice == null) return;
 
         String value = JOptionPane.showInputDialog(this, "Enter " + choice + ":");
         if (value == null || value.isBlank()) {
@@ -203,7 +215,7 @@ public class RegistrationForm extends JFrame {
 
                 String imgPath = rs.getString("ImagePath");
                 if (imgPath != null && !imgPath.isBlank()) {
-                    ImageIcon icon = new ImageIcon(new ImageIcon(imgPath).getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH));
+                    ImageIcon icon = new ImageIcon(new ImageIcon(imgPath).getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH));
                     imagePreview.setIcon(icon);
                 }
             } else {
