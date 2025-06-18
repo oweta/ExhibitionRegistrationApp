@@ -8,7 +8,7 @@ import java.io.File;
 public class DBConnector {
 
     // Path for database location
-    private static final String DB_PATH = "C:/Users/HP/Documents/GitHub/ExhibitionRegistrationApp/database/VUE_Exhibition.accdb";
+    private static final String DB_PATH = "C:/xampp/htdocs/ExhibitionRegistrationApp/database/VUE_Exhibition.accdb";
 
     public static Connection connect() {
         Connection conn = null;
