@@ -1,303 +1,302 @@
+// Package declaration for the app's structure
 package com.vu.exhibition;
 
+// Import FlatLaf for modern look and feel, Swing UI components, AWT event handling, file access, and JDBC
+import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
+import java.io.File;
 import java.sql.*;
-import com.vu.exhibition.DBConnector;
 
+// Main class that extends JFrame (a window in Java Swing)
 public class RegistrationForm extends JFrame {
 
+    // UI components declared at class level so they can be accessed by multiple methods
     private JTextField regIdField, nameField, facultyField, titleField, contactField, emailField, imagePathField;
+    private JLabel imagePreview;
+    private JPanel formPanel;
 
+    // Constructor: runs when a new RegistrationForm window is created
     public RegistrationForm() {
+        // Set the application's modern look and feel using FlatLaf
+        try {
+            UIManager.setLookAndFeel(new FlatLightLaf());
+        } catch (Exception ex) {
+            System.err.println("Failed to initialize FlatLaf");
+        }
+
+        // Set window title, size, close behavior, and center it on screen
         setTitle("Exhibition Registration");
-        setSize(600, 600);
+        setSize(700, 650);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Center the window
+        setLocationRelativeTo(null);
 
-        // Create form components
+        // Create and style the title label
         JLabel titleLabel = new JLabel("Innovation Exhibition Registration", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(new Color(33, 150, 243));
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(15, 0, 10, 0));
 
-        JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
+        // Create and style the main form panel with a grid layout
+        formPanel = new JPanel(new GridLayout(9, 2, 12, 12));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
+        formPanel.setBackground(Color.WHITE);
 
-        formPanel.add(new JLabel("Registration ID:"));
+        // Initialize all text fields for form input
         regIdField = new JTextField();
-        formPanel.add(regIdField);
-
-        formPanel.add(new JLabel("Student Name:"));
         nameField = new JTextField();
-        formPanel.add(nameField);
-
-        formPanel.add(new JLabel("Faculty:"));
         facultyField = new JTextField();
-        formPanel.add(facultyField);
-
-        formPanel.add(new JLabel("Project Title:"));
         titleField = new JTextField();
-        formPanel.add(titleField);
-
-        formPanel.add(new JLabel("Contact Number:"));
         contactField = new JTextField();
-        formPanel.add(contactField);
-
-        formPanel.add(new JLabel("Email Address:"));
         emailField = new JTextField();
-        formPanel.add(emailField);
-
-        formPanel.add(new JLabel("Image Path:"));
         imagePathField = new JTextField();
-        formPanel.add(imagePathField);
+        imagePathField.setEditable(false); // prevent users from typing the path manually
 
-        // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        // Add form rows (label + input field) for participant details
+        addFormRow(formPanel, "Registration ID:", regIdField);
+        addFormRow(formPanel, "Student Name:", nameField);
+        addFormRow(formPanel, "Faculty:", facultyField);
+        addFormRow(formPanel, "Project Title:", titleField);
+        addFormRow(formPanel, "Contact Number:", contactField);
+        addFormRow(formPanel, "Email Address:", emailField);
+        addFormRow(formPanel, "Image Path:", imagePathField);
 
-        JButton viewAllButton = new JButton("View All");
-        viewAllButton.addActionListener(e -> new ViewAllParticipants());
-        buttonPanel.add(viewAllButton);
+        // Browse button to select an image file
+        JButton browseButton = new JButton("Browse");
+        browseButton.addActionListener(e -> chooseImage());
+        JPanel browsePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        browsePanel.add(browseButton);
+        formPanel.add(new JLabel("")); // filler for grid alignment
+        formPanel.add(browsePanel);
 
+        // Image preview label to show selected image
+        imagePreview = new JLabel();
+        imagePreview.setPreferredSize(new Dimension(150, 150));
+        imagePreview.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        imagePreview.setHorizontalAlignment(JLabel.CENTER);
+        imagePreview.setVerticalAlignment(JLabel.CENTER);
+        formPanel.add(new JLabel("Image Preview:"));
+        formPanel.add(imagePreview);
 
-        JButton registerButton = new JButton("Register");
-        registerButton.addActionListener(e -> registerParticipant());
-        buttonPanel.add(registerButton);
+        // Create and add buttons for all participant actions
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 10));
+        buttonPanel.add(styledButton("View All", e -> new ViewAllParticipants()));
+        buttonPanel.add(styledButton("Register", e -> registerParticipant()));
+        buttonPanel.add(styledButton("Search", e -> searchParticipant()));
+        buttonPanel.add(styledButton("Update", e -> updateParticipant()));
+        buttonPanel.add(styledButton("Delete", e -> deleteParticipant()));
+        buttonPanel.add(styledButton("Clear", e -> clearForm()));
+        buttonPanel.add(styledButton("Exit", e -> System.exit(0)));
 
-        JButton searchButton = new JButton("Search");
-        searchButton.addActionListener(e -> searchParticipant());
-        buttonPanel.add(searchButton);
-
-        JButton updateButton = new JButton("Update");
-        updateButton.addActionListener(e -> updateParticipant());
-        buttonPanel.add(updateButton);
-
-        JButton deleteButton = new JButton("Delete");
-        deleteButton.addActionListener(e -> deleteParticipant());
-        buttonPanel.add(deleteButton);
-
-        JButton clearButton = new JButton("Clear");
-        clearButton.addActionListener(e -> clearForm());
-        buttonPanel.add(clearButton);
-
-        JButton exitButton = new JButton("Exit");
-        exitButton.addActionListener(e -> System.exit(0));
-        buttonPanel.add(exitButton);
-
-        // Frame layout
+        // Add all components to the main window using BorderLayout
         setLayout(new BorderLayout(10, 10));
         add(titleLabel, BorderLayout.NORTH);
         add(formPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    private void registerParticipant() {
-        String regId = regIdField.getText().trim();
-        String name = nameField.getText().trim();
-        String faculty = facultyField.getText().trim();
-        String title = titleField.getText().trim();
-        String contact = contactField.getText().trim();
-        String email = emailField.getText().trim();
-        String imagePath = imagePathField.getText().trim();
+    // Opens file chooser dialog and sets the selected image
+    private void chooseImage() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Select Participant Image");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            String selectedPath = selectedFile.getAbsolutePath();
+            imagePathField.setText(selectedPath); // set path to field
 
-        if (regId.isEmpty() || name.isEmpty() || faculty.isEmpty() || title.isEmpty()
-                || contact.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill in all required fields.", "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return;
+            // Display scaled image preview
+            ImageIcon icon = new ImageIcon(new ImageIcon(selectedPath).getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH));
+            imagePreview.setIcon(icon);
         }
+    }
 
-        if (!email.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$")) {
-            JOptionPane.showMessageDialog(this, "Invalid email format.", "Validation Error", JOptionPane.WARNING_MESSAGE);
+    // Placeholder for future feature: custom cropping of images before display
+    private void cropAndDisplayImage(String path) {
+        // Future logic goes here
+    }
+
+    // Utility method to add a row to the form (label + input field)
+    private void addFormRow(JPanel panel, String labelText, JTextField field) {
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        panel.add(label);
+        panel.add(field);
+    }
+
+    // Utility method to create and return a styled JButton with a click listener
+    private JButton styledButton(String text, java.awt.event.ActionListener action) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setBackground(new Color(33, 150, 243));
+        btn.setForeground(Color.WHITE);
+        btn.setFocusPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(6, 15, 6, 15));
+        btn.addActionListener(action);
+        return btn;
+    }
+
+    // Establishes and returns a connection to the database
+    private Connection connect() throws SQLException {
+        return DBConnector.connect();
+    }
+
+    // Saves participant data into the database
+    private void registerParticipant() {
+        if (regIdField.getText().isBlank() || nameField.getText().isBlank()) {
+            JOptionPane.showMessageDialog(this, "Please fill in at least Registration ID and Name.");
             return;
         }
 
         String sql = "INSERT INTO Participants (RegistrationID, StudentName, Faculty, ProjectTitle, ContactNumber, EmailAddress, ImagePath) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = DBConnector.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, regIdField.getText());
+            pst.setString(2, nameField.getText());
+            pst.setString(3, facultyField.getText());
+            pst.setString(4, titleField.getText());
+            pst.setString(5, contactField.getText());
+            pst.setString(6, emailField.getText());
+            pst.setString(7, imagePathField.getText());
 
-            pstmt.setString(1, regId);
-            pstmt.setString(2, name);
-            pstmt.setString(3, faculty);
-            pstmt.setString(4, title);
-            pstmt.setString(5, contact);
-            pstmt.setString(6, email);
-            pstmt.setString(7, imagePath);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(this, "Participant registered successfully!");
+            int inserted = pst.executeUpdate();
+            if (inserted > 0) {
+                JOptionPane.showMessageDialog(this, "Participant Registered!");
                 clearForm();
             }
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error registering participant: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Registration Failed: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
+    // Searches for participant using selected field (ID, Name, or Faculty)
     private void searchParticipant() {
-        String input = JOptionPane.showInputDialog(this, "Enter Registration ID or Student Name to search:");
+        String[] options = {"Registration ID", "Student Name", "Faculty"};
+        String choice = (String) JOptionPane.showInputDialog(
+                this, "Search by:", "Search Option",
+                JOptionPane.QUESTION_MESSAGE, null,
+                options, options[0]);
 
-        if (input == null || input.trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Search cancelled or empty input.");
+        if (choice == null) return;
+
+        String value = JOptionPane.showInputDialog(this, "Enter " + choice + ":");
+        if (value == null || value.isBlank()) {
+            JOptionPane.showMessageDialog(this, "Search value cannot be empty.");
             return;
         }
 
-        input = input.trim();
+        String sql = null;
+        switch (choice) {
+            case "Registration ID":
+                sql = "SELECT * FROM Participants WHERE RegistrationID = ?";
+                break;
+            case "Student Name":
+                sql = "SELECT * FROM Participants WHERE StudentName LIKE ?";
+                value = "%" + value + "%";
+                break;
+            case "Faculty":
+                sql = "SELECT * FROM Participants WHERE Faculty LIKE ?";
+                value = "%" + value + "%";
+                break;
+        }
 
-        try (Connection conn = DBConnector.connect()) {
-            String query;
-            PreparedStatement stmt;
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, value);
+            ResultSet rs = pst.executeQuery();
 
-            if (input.matches("\\d+")) {
-                query = "SELECT * FROM Participants WHERE RegistrationID = ?";
-                stmt = conn.prepareStatement(query);
-                stmt.setString(1, input);
-            } else {
-                query = "SELECT * FROM Participants WHERE StudentName LIKE ?";
-                stmt = conn.prepareStatement(query);
-                stmt.setString(1, "%" + input + "%");
-            }
+            if (rs.next()) {
+                // Populate fields with found data
+                regIdField.setText(rs.getString("RegistrationID"));
+                nameField.setText(rs.getString("StudentName"));
+                facultyField.setText(rs.getString("Faculty"));
+                titleField.setText(rs.getString("ProjectTitle"));
+                contactField.setText(rs.getString("ContactNumber"));
+                emailField.setText(rs.getString("EmailAddress"));
+                imagePathField.setText(rs.getString("ImagePath"));
 
-            ResultSet rs = stmt.executeQuery();
-
-            java.util.List<String> options = new java.util.ArrayList<>();
-            java.util.List<String[]> results = new java.util.ArrayList<>();
-
-            while (rs.next()) {
-                String id = rs.getString("RegistrationID");
-                String name = rs.getString("StudentName");
-                String title = rs.getString("ProjectTitle");
-                options.add(id + " - " + name + " (" + title + ")");
-                results.add(new String[]{
-                        rs.getString("RegistrationID"),
-                        rs.getString("StudentName"),
-                        rs.getString("Faculty"),
-                        rs.getString("ProjectTitle"),
-                        rs.getString("ContactNumber"),
-                        rs.getString("EmailAddress"),
-                        rs.getString("ImagePath")
-                });
-            }
-
-            if (results.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No participant found.");
-            } else if (results.size() == 1) {
-                loadParticipantData(results.get(0));
-                JOptionPane.showMessageDialog(this, "Participant loaded.");
-            } else {
-                String selected = (String) JOptionPane.showInputDialog(
-                        this,
-                        "Multiple participants found. Select one:",
-                        "Select Participant",
-                        JOptionPane.PLAIN_MESSAGE,
-                        null,
-                        options.toArray(),
-                        options.get(0)
-                );
-
-                if (selected != null) {
-                    int index = options.indexOf(selected);
-                    loadParticipantData(results.get(index));
-                    JOptionPane.showMessageDialog(this, "Participant loaded.");
+                // Load and show image preview if path exists
+                String imgPath = rs.getString("ImagePath");
+                if (imgPath != null && !imgPath.isBlank()) {
+                    ImageIcon icon = new ImageIcon(new ImageIcon(imgPath).getImage().getScaledInstance(150, 150, Image.SCALE_SMOOTH));
+                    imagePreview.setIcon(icon);
                 }
+            } else {
+                JOptionPane.showMessageDialog(this, "Participant not found.");
             }
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error during search: " + ex.getMessage());
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Search Failed: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
+    // Updates an existing participant's data based on Registration ID
     private void updateParticipant() {
-        String regId = regIdField.getText().trim();
-
-        if (regId.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Enter Registration ID to update.");
-            return;
-        }
-
-        String name = nameField.getText().trim();
-        String faculty = facultyField.getText().trim();
-        String title = titleField.getText().trim();
-        String contact = contactField.getText().trim();
-        String email = emailField.getText().trim();
-        String imagePath = imagePathField.getText().trim();
-
-        if (!email.matches("^[\\w.-]+@[\\w.-]+\\.\\w+$")) {
-            JOptionPane.showMessageDialog(this, "Invalid email format.");
+        if (regIdField.getText().isBlank()) {
+            JOptionPane.showMessageDialog(this, "Please enter Registration ID to update.");
             return;
         }
 
         String sql = "UPDATE Participants SET StudentName=?, Faculty=?, ProjectTitle=?, ContactNumber=?, EmailAddress=?, ImagePath=? WHERE RegistrationID=?";
 
-        try (Connection conn = DBConnector.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, nameField.getText());
+            pst.setString(2, facultyField.getText());
+            pst.setString(3, titleField.getText());
+            pst.setString(4, contactField.getText());
+            pst.setString(5, emailField.getText());
+            pst.setString(6, imagePathField.getText());
+            pst.setString(7, regIdField.getText());
 
-            stmt.setString(1, name);
-            stmt.setString(2, faculty);
-            stmt.setString(3, title);
-            stmt.setString(4, contact);
-            stmt.setString(5, email);
-            stmt.setString(6, imagePath);
-            stmt.setString(7, regId);
-
-            int rows = stmt.executeUpdate();
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(this, "Participant updated successfully!");
+            int updated = pst.executeUpdate();
+            if (updated > 0) {
+                JOptionPane.showMessageDialog(this, "Participant Updated!");
             } else {
-                JOptionPane.showMessageDialog(this, "Participant not found.");
+                JOptionPane.showMessageDialog(this, "Update Failed: ID not found.");
             }
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Update failed: " + ex.getMessage());
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Update Failed: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
+    // Deletes a participant based on Registration ID
     private void deleteParticipant() {
-        String regId = regIdField.getText().trim();
-
-        if (regId.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Enter Registration ID to delete.");
-            return;
-        }
-
-        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this participant?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
-
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (regIdField.getText().isBlank()) {
+            JOptionPane.showMessageDialog(this, "Please enter Registration ID to delete.");
             return;
         }
 
         String sql = "DELETE FROM Participants WHERE RegistrationID = ?";
 
-        try (Connection conn = DBConnector.connect();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = connect(); PreparedStatement pst = conn.prepareStatement(sql)) {
+            pst.setString(1, regIdField.getText());
 
-            stmt.setString(1, regId);
-            int rows = stmt.executeUpdate();
-
-            if (rows > 0) {
-                JOptionPane.showMessageDialog(this, "Participant deleted successfully!");
+            int deleted = pst.executeUpdate();
+            if (deleted > 0) {
+                JOptionPane.showMessageDialog(this, "Participant Deleted!");
                 clearForm();
             } else {
-                JOptionPane.showMessageDialog(this, "Participant not found.");
+                JOptionPane.showMessageDialog(this, "Delete Failed: ID not found.");
             }
 
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Delete failed: " + ex.getMessage());
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Delete Failed: " + ex.getMessage());
             ex.printStackTrace();
         }
     }
 
-    private void loadParticipantData(String[] data) {
-        regIdField.setText(data[0]);
-        nameField.setText(data[1]);
-        facultyField.setText(data[2]);
-        titleField.setText(data[3]);
-        contactField.setText(data[4]);
-        emailField.setText(data[5]);
-        imagePathField.setText(data[6]);
-    }
-
+    // Clears all input fields and image preview
     private void clearForm() {
         regIdField.setText("");
         nameField.setText("");
@@ -306,8 +305,10 @@ public class RegistrationForm extends JFrame {
         contactField.setText("");
         emailField.setText("");
         imagePathField.setText("");
+        imagePreview.setIcon(null);
     }
 
+    // Main method to launch the application
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new RegistrationForm().setVisible(true));
     }
